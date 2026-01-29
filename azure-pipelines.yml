@@ -1,0 +1,52 @@
+trigger:
+- main
+
+pool: 
+  name: CCJDA-SelfHosted
+
+variables:
+- group: pipeline_variables  # Reference the variable group
+
+jobs:
+- job: CensusJob
+  steps:
+  - checkout: none  # Completely disables default Azure DevOps repo checkout
+
+  - script: |
+      echo "Setting up Git authentication..."
+      git remote set-url origin https://$(idoc_pipeline2)@dev.azure.com/ILGOV-CJIA/CCJDA%E2%80%93PIPELINE/_git/census_population
+      git ls-remote https://$(idoc_pipeline2)@dev.azure.com/ILGOV-CJIA/CCJDA%E2%80%93PIPELINE/_git/census_population
+    displayName: "Verify Repository Exists with PAT"
+
+  - script: |
+      echo "Setting up Python environment..."
+      export LD_LIBRARY_PATH=/opt/azagent/_work/_tool/Python/3.13.3/x64/lib:$LD_LIBRARY_PATH
+      /opt/azagent/_work/_tool/Python/3.13.3/x64/bin/python3 --version
+    displayName: "Verify Python"
+
+  - script: |
+      echo "Cleaning up existing repository..."
+      rm -rf /opt/azagent/repo
+      echo "Cloning repository..."
+      git clone https://$(idoc_pipeline2)@dev.azure.com/ILGOV-CJIA/CCJDA%E2%80%93PIPELINE/_git/census_population /opt/azagent/repo
+    displayName: "Clone Repository"
+
+
+  - script: |
+      echo "Installing dependencies..."
+      export LD_LIBRARY_PATH=/opt/azagent/_work/_tool/Python/3.13.3/x64/lib:$LD_LIBRARY_PATH
+      /opt/azagent/_work/_tool/Python/3.13.3/x64/bin/python3 -m pip install -r /opt/azagent/repo/requirements.txt
+    displayName: "Install Dependencies"
+
+
+  - script: |
+      
+      echo "Setting Environmental Variables"
+      export POSTGRES_USER=$(pgres_username)
+      export POSTGRES_PASSWORD=$(pgres_password)
+
+      echo "Running to_pgres.py --------------------------------------------------------------------------"
+      export LD_LIBRARY_PATH=/opt/azagent/_work/_tool/Python/3.13.3/x64/lib:$LD_LIBRARY_PATH
+      /opt/azagent/_work/_tool/Python/3.13.3/x64/bin/python3 "/opt/azagent/repo/population_to_pgres.py"
+      
+    displayName: "Executing Scripts"

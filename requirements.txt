@@ -1,0 +1,4 @@
+pandas==2.3.2
+psycopg2==2.9.9
+psycopg2_binary==2.9.10
+Requests==2.32.5
